@@ -50,7 +50,9 @@
                 if (res.data.ok === 1) {
                     // 存储token
                     console.log("进入首页 /");
-                    location.href = `/chat?username=${username.value}`
+                    // location.href = `/chat?username=${username.value}`  //websocket
+                    localStorage.setItem("username", username.value)
+                    location.href = "/chat"  //socket.io
                 } else {
                     alert("用户名与密码不匹配")
                 }

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        /* 新增：极简样式，让聊天记录更易读（可选但推荐） */
+        #chatList {
+            width: 500px;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+
+        .chat-item {
+            margin: 5px 0;
+        }
+
+        .chat-group {
+            color: #333;
+        }
+
+        .chat-single {
+            color: #0066cc;
+        }
+
+        .chat-self {
+            text-align: right;
+            color: #009900;
+        }
+    </style>
+    <script src="/javascripts/socket.io.min.js"></script>
+</head>
+
+<body>
+    <h1>WebSocket 聊天室</h1>
+    <h3>欢迎 <span id="myname" style="color:red"></span>，当前在线用户数：<span id="count" style="color:green"></span></h3>
+
+    <!-- 新增：聊天记录列表容器 -->
+    <div id="chatList"></div>
+
+    <input type="text" id="text"><button id="send">发送</button>
+    <select id="select"></select>
+
+    <script>
+        let select = document.querySelector("#select")
+        let myname = document.querySelector("#myname")
+        let count = document.querySelector("#count")
+        let send = document.querySelector("#send")
+        let text = document.querySelector("#text")
+        // 新增：获取聊天记录容器
+        let chatList = document.querySelector("#chatList")
+
+        //当前登陆用户信息显示 socket.io[演示]存了 localStorage
+        const username = localStorage.getItem("username");
+        console.log("登陆用户:", username);
+        myname.innerHTML = username
+        count.innerHTML = 0
+
+        const WebSocketType = {
+            Error: 0,     //错误
+            GroupList: 1, //获取在线用户列表
+            GroupChat: 2, //群聊
+            SingleChat: 3 //私聊
+        }
+        // 建立 socket 连接，带着 token，后端验证
+        const socket = io(`ws://localhost:3000?token=${localStorage.getItem("token")}`)
+        socket.on(WebSocketType.GroupChat, msg => {
+            console.log("msg 2:", JSON.parse(msg));
+            const msgJSON = JSON.parse(msg)
+            // 新增：渲染群聊消息到列表，如果当前就是我自己，就不需要再把我自己放上去
+            if (msgJSON.user?.username !== username) {
+                renderChatMsg(msgJSON.user?.username || "广播", msgJSON.data, "group");
+            }
+        })
+        socket.on(WebSocketType.Error, msg => {
+            localStorage.removeItem("token")
+            location.href = "/login"
+        })
+        socket.on(WebSocketType.GroupList, msg => {
+            console.log("msg 1:", JSON.parse(msg));
+            const onlineList = JSON.parse(msg).data
+            if (Array.isArray(onlineList)) {
+                console.log("在线用户数->", onlineList.length);
+                count.innerHTML = `${onlineList.length}`
+            }
+            select.innerHTML = ""
+            select.innerHTML = `<option>全部</option>` + onlineList.map(item => `
+                        <option>${item.username}</option>
+                    `)
+        })
+        socket.on(WebSocketType.SingleChat, msg => {
+            console.log("msg 3:", JSON.parse(msg));
+            const msgJSON = JSON.parse(msg)
+            // 新增：渲染私聊消息到列表
+            renderChatMsg(msgJSON.user?.username || "私聊", msgJSON.data, "single");
+        })
+
+        send.onclick = () => {
+            if (text.value.trim() === "") return; // 新增：空消息不发送
+            if (select.value === "全部") {
+                console.log("群发");
+                socket.emit(WebSocketType.GroupChat, createMessage(text.value))
+                // 新增：自己发送的群聊消息，直接渲染（避免等后端回传）
+                renderChatMsg("我", text.value, "self");
+            } else {
+                console.log("私聊");
+                socket.emit(WebSocketType.SingleChat, createMessage(text.value, select.value))
+                // 新增：自己发送的私聊消息，直接渲染
+                renderChatMsg(`我（私聊给${select.value}）`, text.value, "self");
+            }
+            text.value = ""; // 新增：发送后清空输入框
+        }
+        // 新增：渲染聊天消息的核心函数（最小改动的关键）
+        function renderChatMsg(sender, content, type) {
+            const chatItem = document.createElement("div");
+            chatItem.className = `chat-item chat-${type}`;
+            chatItem.innerHTML = `<strong>${sender}：</strong>${content}`;
+            chatList.appendChild(chatItem);
+            // 新增：自动滚动到最新消息
+            chatList.scrollTop = chatList.scrollHeight;
+        }
+        function createMessage(data, to) {
+            return JSON.stringify({ data, to })
+        }
+    </script>
+</body>
+
+</html>

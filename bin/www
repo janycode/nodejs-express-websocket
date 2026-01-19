@@ -10,8 +10,9 @@ var http = require('http');
 
 // 引入数据库
 require("../config/db.config")
-// 引入socket服务器
-require("./websocketServer")
+// require("./websocketServer")
+// 1.引入socket服务器
+var socketioServer = require("./socketioServer")
 
 /**
  * Get port from environment and store in Express.
@@ -25,6 +26,8 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+// 2.引入socket.io
+socketioServer(server);
 
 /**
  * Listen on provided port, on all network interfaces.

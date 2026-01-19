@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登陆页面</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+    <script>
+        //axios 拦截器配置示例
+        // 请求拦截
+        axios.interceptors.request.use(function (config) {
+            console.log("请求发出前，先执行的方法");
+            return config;
+        }, function (error) {
+            return Promise.reject(error);
+        });
+
+        // 响应拦截
+        axios.interceptors.response.use(function (response) {
+            console.log("响应成功后，先执行的方法");
+            const { authorization } = response.headers
+            authorization && localStorage.setItem("token", authorization)
+            return response;
+        }, function (error) {
+            return Promise.reject(error);
+        });
+    </script>
+</head>
+
+<body>
+    <h1>登陆</h1>
+    <div>
+        <div>用户名：<input type="text" id="username"></div>
+        <div>密码：<input type="password" id="password"></div>
+        <div><button id="login">登陆</button></div>
+    </div>
+
+    <script>
+        var username = document.querySelector("#username")
+        var password = document.querySelector("#password")
+        var login = document.querySelector("#login")
+
+        login.onclick = () => {
+            axios.post("/api/login", {
+                username: username.value,
+                password: password.value,
+            }).then(res => {
+                console.log("axios login->", res);  //token 在 res.headers.authorization
+                if (res.data.ok === 1) {
+                    // 存储token
+                    console.log("进入首页 /");
+                    location.href = `/chat?username=${username.value}`
+                } else {
+                    alert("用户名与密码不匹配")
+                }
+            })
+        }
+    </script>
+</body>
+
+</html>

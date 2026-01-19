@@ -1,0 +1,26 @@
+{
+  "name": "server",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "nodemon ./bin/www",
+    "apidoc": "apidoc -i ./routes -o ./doc && http-server ./doc -p 8080 -o --cors"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "connect-mongo": "^4.6.0",
+    "cookie-parser": "~1.4.4",
+    "cross-env": "^10.1.0",
+    "debug": "~2.6.9",
+    "ejs": "~2.6.1",
+    "express": "~4.16.1",
+    "express-session": "^1.18.2",
+    "http-errors": "~1.6.3",
+    "http-server": "^14.1.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^7.8.8",
+    "morgan": "~1.9.1",
+    "multer": "^2.0.2",
+    "ws": "^8.19.0"
+  }
+}
